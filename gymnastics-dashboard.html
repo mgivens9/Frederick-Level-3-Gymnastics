@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gymnastics Team Scores Dashboard</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            padding: 0 20px;
+            overflow-x: auto;
+        }
+        
+        .nav-tab {
+            padding: 15px 25px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            color: #6c757d;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .nav-tab:hover {
+            color: #667eea;
+        }
+        
+        .nav-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .stat-card h3 {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-card .value {
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+        
+        .stat-card .label {
+            font-size: 0.85em;
+            opacity: 0.85;
+            margin-top: 5px;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .chart-container h2 {
+            margin-bottom: 20px;
+            color: #2d3748;
+            font-size: 1.5em;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.9em;
+        }
+        
+        select, input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+            background: white;
+        }
+        
+        select:focus, input[type="file"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        th {
+            background: #f7fafc;
+            font-weight: 700;
+            color: #2d3748;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+        }
+        
+        tbody tr:hover {
+            background: #f7fafc;
+        }
+        
+        .score-high {
+            color: #48bb78;
+            font-weight: 700;
+        }
+        
+        .score-medium {
+            color: #ed8936;
+            font-weight: 700;
+        }
+        
+        .score-low {
+            color: #f56565;
+            font-weight: 700;
+        }
+        
+        .trend-up {
+            color: #48bb78;
+        }
+        
+        .trend-down {
+            color: #f56565;
+        }
+        
+        .upload-section {
+            background: #f7fafc;
+            border: 2px dashed #cbd5e0;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        .upload-section h3 {
+            margin-bottom: 15px;
+            color: #2d3748;
+        }
+        
+        .upload-section p {
+            color: #718096;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .insight-box {
+            background: #edf2f7;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .insight-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .insight-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .insight-box li {
+            padding: 8px 0;
+            color: #4a5568;
+            line-height: 1.6;
+        }
+        
+        .insight-box li:before {
+            content: "→ ";
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Initial CSV data
+        const initialCSV = `Meet Name,Date,Gymnast,Event (Vault/Bars/Beam/Floor/AA),Score
+2026 Harford Trophy Meet,2026-02-07,Aiyana Lanham,Vault,8.8
+2026 Harford Trophy Meet,2026-02-07,Aiyana Lanham,Bars,8.65
+2026 Harford Trophy Meet,2026-02-07,Aiyana Lanham,Beam,8.5
+2026 Harford Trophy Meet,2026-02-07,Aiyana Lanham,Floor,8.95
+2026 Harford Trophy Meet,2026-02-07,Aiyana Lanham,AA,34.9
+2026 Harford Trophy Meet,2026-02-07,Izzy Abraham,Vault,9.2
+2026 Harford Trophy Meet,2026-02-07,Izzy Abraham,Bars,8.05
+2026 Harford Trophy Meet,2026-02-07,Izzy Abraham,Beam,8.425
+2026 Harford Trophy Meet,2026-02-07,Izzy Abraham,Floor,8.575
+2026 Harford Trophy Meet,2026-02-07,Izzy Abraham,AA,34.25
+2026 Harford Trophy Meet,2026-02-07,Cora Cook,Vault,9.3
+2026 Harford Trophy Meet,2026-02-07,Cora Cook,Bars,9.4
+2026 Harford Trophy Meet,2026-02-07,Cora Cook,Beam,9.45
+2026 Harford Trophy Meet,2026-02-07,Cora Cook,Floor,9.125
+2026 Harford Trophy Meet,2026-02-07,Cora Cook,AA,37.275
+2026 Harford Trophy Meet,2026-02-07,Ronan Givens,Vault,8.7
+2026 Harford Trophy Meet,2026-02-07,Ronan Givens,Bars,7.75
+2026 Harford Trophy Meet,2026-02-07,Ronan Givens,Beam,9.075
+2026 Harford Trophy Meet,2026-02-07,Ronan Givens,Floor,8.625
+2026 Harford Trophy Meet,2026-02-07,Ronan Givens,AA,34.15
+2026 Harford Trophy Meet,2026-02-07,Sasha Glouchkova,Vault,9.1
+2026 Harford Trophy Meet,2026-02-07,Sasha Glouchkova,Bars,8.25
+2026 Harford Trophy Meet,2026-02-07,Sasha Glouchkova,Beam,8.8
+2026 Harford Trophy Meet,2026-02-07,Sasha Glouchkova,Floor,9.125
+2026 Harford Trophy Meet,2026-02-07,Sasha Glouchkova,AA,35.275
+2026 Harford Trophy Meet,2026-02-07,Vivan Hess,Vault,8.95
+2026 Harford Trophy Meet,2026-02-07,Vivan Hess,Bars,9.15
+2026 Harford Trophy Meet,2026-02-07,Vivan Hess,Beam,9.125
+2026 Harford Trophy Meet,2026-02-07,Vivan Hess,Floor,8.525
+2026 Harford Trophy Meet,2026-02-07,Vivan Hess,AA,35.75
+2026 Harford Trophy Meet,2026-02-07,Zin-Marie Johnson,Vault,8.4
+2026 Harford Trophy Meet,2026-02-07,Zin-Marie Johnson,Bars,8.825
+2026 Harford Trophy Meet,2026-02-07,Zin-Marie Johnson,Beam,8.4
+2026 Harford Trophy Meet,2026-02-07,Zin-Marie Johnson,Floor,9.4
+2026 Harford Trophy Meet,2026-02-07,Zin-Marie Johnson,AA,35.025
+2026 Harford Trophy Meet,2026-02-07,Naveyah McCalla,Vault,9.1
+2026 Harford Trophy Meet,2026-02-07,Naveyah McCalla,Bars,8.5
+2026 Harford Trophy Meet,2026-02-07,Naveyah McCalla,Beam,9.2
+2026 Harford Trophy Meet,2026-02-07,Naveyah McCalla,Floor,9.525
+2026 Harford Trophy Meet,2026-02-07,Naveyah McCalla,AA,35.925
+2026 Harford Trophy Meet,2026-02-07,Mira Noblitt,Vault,8.9
+2026 Harford Trophy Meet,2026-02-07,Mira Noblitt,Bars,8.55
+2026 Harford Trophy Meet,2026-02-07,Mira Noblitt,Beam,8.925
+2026 Harford Trophy Meet,2026-02-07,Mira Noblitt,Floor,8.45
+2026 Harford Trophy Meet,2026-02-07,Mira Noblitt,AA,34.825
+2026 Harford Trophy Meet,2026-02-07,Madelyn Rosen,Vault,9.2
+2026 Harford Trophy Meet,2026-02-07,Madelyn Rosen,Bars,9.025
+2026 Harford Trophy Meet,2026-02-07,Madelyn Rosen,Beam,9
+2026 Harford Trophy Meet,2026-02-07,Madelyn Rosen,Floor,9
+2026 Harford Trophy Meet,2026-02-07,Madelyn Rosen,AA,36.225
+2026 Harford Trophy Meet,2026-02-07,Hailey Sandefer,Vault,8.8
+2026 Harford Trophy Meet,2026-02-07,Hailey Sandefer,Bars,9.05
+2026 Harford Trophy Meet,2026-02-07,Hailey Sandefer,Beam,8.85
+2026 Harford Trophy Meet,2026-02-07,Hailey Sandefer,Floor,7.85
+2026 Harford Trophy Meet,2026-02-07,Hailey Sandefer,AA,34.55
+2026 Harford Trophy Meet,2026-02-07,Allison Tibery,Vault,8.65
+2026 Harford Trophy Meet,2026-02-07,Allison Tibery,Bars,8.525
+2026 Harford Trophy Meet,2026-02-07,Allison Tibery,Beam,8.925
+2026 Harford Trophy Meet,2026-02-07,Allison Tibery,Floor,7.05
+2026 Harford Trophy Meet,2026-02-07,Allison Tibery,AA,33.15
+Winterfest Invitational,2026-01-09,Allison Tibery,Vault,8.5
+Winterfest Invitational,2026-01-09,Allison Tibery,Bars,7.9
+Winterfest Invitational,2026-01-09,Allison Tibery,Beam,9
+Winterfest Invitational,2026-01-09,Allison Tibery,Floor,7.4
+Winterfest Invitational,2026-01-09,Allison Tibery,AA,32.8
+Christmas on the Chesapeake,2025-12-12,Allison Tibery,Vault,8.1
+Christmas on the Chesapeake,2025-12-12,Allison Tibery,Bars,7.75
+Christmas on the Chesapeake,2025-12-12,Allison Tibery,Beam,8.6
+Christmas on the Chesapeake,2025-12-12,Allison Tibery,Floor,7.55
+Christmas on the Chesapeake,2025-12-12,Allison Tibery,AA,32
+Winterfest Invitational,2026-01-09,Hailey Sandefer,Vault,9.1
+Winterfest Invitational,2026-01-09,Hailey Sandefer,Bars,8.1
+Winterfest Invitational,2026-01-09,Hailey Sandefer,Beam,8.775
+Winterfest Invitational,2026-01-09,Hailey Sandefer,Floor,7.95
+Winterfest Invitational,2026-01-09,Hailey Sandefer,AA,33.925
+Christmas on the Chesapeake,2025-12-12,Hailey Sandefer,Vault,8.5
+Christmas on the Chesapeake,2025-12-12,Hailey Sandefer,Bars,9.15
+Christmas on the Chesapeake,2025-12-12,Hailey Sandefer,Beam,7.35
+Christmas on the Chesapeake,2025-12-12,Hailey Sandefer,Floor,8.15
+Christmas on the Chesapeake,2025-12-12,Hailey Sandefer,AA,33.15
+Winterfest Invitational,2026-01-09,Madelyn Rosen,Vault,9.15
+Winterfest Invitational,2026-01-09,Madelyn Rosen,Bars,8.4
+Winterfest Invitational,2026-01-09,Madelyn Rosen,Beam,9.15
+Winterfest Invitational,2026-01-09,Madelyn Rosen,Floor,8.8
+Winterfest Invitational,2026-01-09,Madelyn Rosen,AA,35.5
+Christmas on the Chesapeake,2025-12-12,Madelyn Rosen,Vault,9.35
+Christmas on the Chesapeake,2025-12-12,Madelyn Rosen,Bars,8.2
+Christmas on the Chesapeake,2025-12-12,Madelyn Rosen,Beam,9.2
+Christmas on the Chesapeake,2025-12-12,Madelyn Rosen,Floor,8.9
+Christmas on the Chesapeake,2025-12-12,Madelyn Rosen,AA,35.65
+Winterfest Invitational,2026-01-09,Mira Noblitt,Vault,8.85
+Winterfest Invitational,2026-01-09,Mira Noblitt,Bars,8.05
+Winterfest Invitational,2026-01-09,Mira Noblitt,Floor,7.5
+Winterfest Invitational,2026-01-09,Mira Noblitt,Beam,9.05
+Winterfest Invitational,2026-01-09,Mira Noblitt,AA,33.45
+Christmas on the Chesapeake,2025-12-12,Mira Noblitt,Vault,8.8
+Christmas on the Chesapeake,2025-12-12,Mira Noblitt,Bars,8.4
+Christmas on the Chesapeake,2025-12-12,Mira Noblitt,Beam,8.6
+Christmas on the Chesapeake,2025-12-12,Mira Noblitt,Floor,7.6
+Christmas on the Chesapeake,2025-12-12,Mira Noblitt,AA,33.4
+Winterfest Invitational,2026-01-09,Naveyah McCalla,Vault,8.7
+Winterfest Invitational,2026-01-09,Naveyah McCalla,Bars,8.5
+Winterfest Invitational,2026-01-09,Naveyah McCalla,Beam,9.2
+Winterfest Invitational,2026-01-09,Naveyah McCalla,Floor,9.525
+Winterfest Invitational,2026-01-09,Naveyah McCalla,AA,35.925
+Christmas on the Chesapeake,2025-12-12,Naveyah McCalla,Vault,9.1
+Christmas on the Chesapeake,2025-12-12,Naveyah McCalla,Bars,8
+Christmas on the Chesapeake,2025-12-12,Naveyah McCalla,Beam,9.05
+Christmas on the Chesapeake,2025-12-12,Naveyah McCalla,Floor,9.1
+Christmas on the Chesapeake,2025-12-12,Naveyah McCalla,AA,35.25
+Winterfest Invitational,2026-01-09,Zin-Marie Johnson,Vault,8.65
+Winterfest Invitational,2026-01-09,Zin-Marie Johnson,Bars,9.475
+Winterfest Invitational,2026-01-09,Zin-Marie Johnson,Beam,8.575
+Winterfest Invitational,2026-01-09,Zin-Marie Johnson,Floor,9
+Winterfest Invitational,2026-01-09,Zin-Marie Johnson,AA,35.7
+Christmas on the Chesapeake,2025-12-12,Zin-Marie Johnson,Vault,9.15
+Christmas on the Chesapeake,2025-12-12,Zin-Marie Johnson,Bars,8.9
+Christmas on the Chesapeake,2025-12-12,Zin-Marie Johnson,Beam,8.35
+Christmas on the Chesapeake,2025-12-12,Zin-Marie Johnson,Floor,9.15
+Christmas on the Chesapeake,2025-12-12,Zin-Marie Johnson,AA,35.55
+Winterfest Invitational,2026-01-09,Vivan Hess,Vault,8
+Winterfest Invitational,2026-01-09,Vivan Hess,Bars,9.3
+Winterfest Invitational,2026-01-09,Vivan Hess,Beam,8.9
+Winterfest Invitational,2026-01-09,Vivan Hess,Floor,9
+Winterfest Invitational,2026-01-09,Vivan Hess,AA,35.2
+Christmas on the Chesapeake,2025-12-12,Vivan Hess,Vault,8.5
+Christmas on the Chesapeake,2025-12-12,Vivan Hess,Bars,8.5
+Christmas on the Chesapeake,2025-12-12,Vivan Hess,Beam,9.15
+Christmas on the Chesapeake,2025-12-12,Vivan Hess,Floor,8.75
+Christmas on the Chesapeake,2025-12-12,Vivan Hess,AA,34.9
+Winterfest Invitational,2026-01-09,Sasha Glouchkova,Vault,8.575
+Winterfest Invitational,2026-01-09,Sasha Glouchkova,Bars,7.6
+Winterfest Invitational,2026-01-09,Sasha Glouchkova,Beam,8.4
+Winterfest Invitational,2026-01-09,Sasha Glouchkova,Floor,9
+Winterfest Invitational,2026-01-09,Sasha Glouchkova,AA,33.575
+Christmas on the Chesapeake,2025-12-12,Sasha Glouchkova,Vault,8.7
+Christmas on the Chesapeake,2025-12-12,Sasha Glouchkova,Bars,7.8
+Christmas on the Chesapeake,2025-12-12,Sasha Glouchkova,Beam,8.1
+Christmas on the Chesapeake,2025-12-12,Sasha Glouchkova,Floor,8.8
+Christmas on the Chesapeake,2025-12-12,Sasha Glouchkova,AA,33.4
+Winterfest Invitational,2026-01-09,Ronan Givens,Vault,8.6
+Winterfest Invitational,2026-01-09,Ronan Givens,Bars,8.5
+Winterfest Invitational,2026-01-09,Ronan Givens,Beam,8.05
+Winterfest Invitational,2026-01-09,Ronan Givens,Floor,7.3
+Winterfest Invitational,2026-01-09,Ronan Givens,AA,32.45
+Christmas on the Chesapeake,2025-12-12,Ronan Givens,Vault,8.2
+Christmas on the Chesapeake,2025-12-12,Ronan Givens,Bars,8.1
+Christmas on the Chesapeake,2025-12-12,Ronan Givens,Beam,8.1
+Christmas on the Chesapeake,2025-12-12,Ronan Givens,Floor,7.55
+Christmas on the Chesapeake,2025-12-12,Ronan Givens,AA,31.95
+Winterfest Invitational,2026-01-09,Abigail Douglas,Vault,8.4
+Winterfest Invitational,2026-01-09,Abigail Douglas,Bars,7.95
+Winterfest Invitational,2026-01-09,Abigail Douglas,Beam,9.025
+Winterfest Invitational,2026-01-09,Abigail Douglas,Floor,8.75
+Winterfest Invitational,2026-01-09,Abigail Douglas,AA,34.125
+Christmas on the Chesapeake,2025-12-12,Abigail Douglas,Vault,8.9
+Christmas on the Chesapeake,2025-12-12,Abigail Douglas,Bars,8.1
+Christmas on the Chesapeake,2025-12-12,Abigail Douglas,Beam,9.375
+Christmas on the Chesapeake,2025-12-12,Abigail Douglas,Floor,9.2
+Christmas on the Chesapeake,2025-12-12,Abigail Douglas,AA,35.575
+Winterfest Invitational,2026-01-09,Cora Cook,Vault,9.2
+Winterfest Invitational,2026-01-09,Cora Cook,Bars,9.075
+Winterfest Invitational,2026-01-09,Cora Cook,Beam,9.375
+Winterfest Invitational,2026-01-09,Cora Cook,Floor,9.225
+Winterfest Invitational,2026-01-09,Cora Cook,AA,36.875
+Christmas on the Chesapeake,2025-12-12,Cora Cook,Vault,9.2
+Christmas on the Chesapeake,2025-12-12,Cora Cook,Bars,9.15
+Christmas on the Chesapeake,2025-12-12,Cora Cook,Beam,8.75
+Christmas on the Chesapeake,2025-12-12,Cora Cook,Floor,9.125
+Christmas on the Chesapeake,2025-12-12,Cora Cook,AA,36.225
+Winterfest Invitational,2026-01-09,Izzy Abraham,Vault,8.9
+Winterfest Invitational,2026-01-09,Izzy Abraham,Bars,8.1
+Winterfest Invitational,2026-01-09,Izzy Abraham,Beam,8.45
+Winterfest Invitational,2026-01-09,Izzy Abraham,Floor,8.65
+Winterfest Invitational,2026-01-09,Izzy Abraham,AA,34.1
+Christmas on the Chesapeake,2025-12-12,Izzy Abraham,Vault,9.1
+Christmas on the Chesapeake,2025-12-12,Izzy Abraham,Bars,7.35
+Christmas on the Chesapeake,2025-12-12,Izzy Abraham,Beam,8.75
+Christmas on the Chesapeake,2025-12-12,Izzy Abraham,Floor,8.25
+Christmas on the Chesapeake,2025-12-12,Izzy Abraham,AA,33.45
+Winterfest Invitational,2026-01-09,Aiyana Lanham,Vault,8.3
+Winterfest Invitational,2026-01-09,Aiyana Lanham,Bars,8.7
+Winterfest Invitational,2026-01-09,Aiyana Lanham,Beam,8.35
+Winterfest Invitational,2026-01-09,Aiyana Lanham,Floor,8.55
+Winterfest Invitational,2026-01-09,Aiyana Lanham,AA,33.9
+Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,Vault,8.75
+Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,Bars,7.85
+Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,Beam,7.65
+Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,Floor,8.65
+Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
+
+        function GymnasticsDashboard() {
+            const [data, setData] = useState([]);
+            const [activeTab, setActiveTab] = useState('overview');
+            const [selectedGymnast, setSelectedGymnast] = useState('all');
+            const [selectedEvent, setSelectedEvent] = useState('AA');
+            const chartRefs = {
+                trend: useRef(null),
+                event: useRef(null),
+                comparison: useRef(null)
+            };
+            const chartInstances = useRef({});
+
+            useEffect(() => {
+                parseCSV(initialCSV);
+            }, []);
+
+            const parseCSV = (csvText) => {
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: (results) => {
+                        const parsedData = results.data.map(row => ({
+                            meet: row['Meet Name'],
+                            date: row['Date'],
+                            gymnast: row['Gymnast'],
+                            event: row['Event (Vault/Bars/Beam/Floor/AA)'],
+                            score: parseFloat(row['Score'])
+                        }));
+                        setData(parsedData);
+                    }
+                });
+            };
+
+            const handleFileUpload = (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        parseCSV(e.target.result);
+                    };
+                    reader.readAsText(file);
+                }
+            };
+
+            const getUniqueValues = (field) => {
+                return [...new Set(data.map(d => d[field]))].sort();
+            };
+
+            const getStats = () => {
+                const aaScores = data.filter(d => d.event === 'AA');
+                const totalGymnasts = getUniqueValues('gymnast').length;
+                const totalMeets = getUniqueValues('meet').length;
+                const avgScore = aaScores.length > 0 
+                    ? (aaScores.reduce((sum, d) => sum + d.score, 0) / aaScores.length).toFixed(2)
+                    : '0.00';
+                const topScore = aaScores.length > 0
+                    ? Math.max(...aaScores.map(d => d.score)).toFixed(2)
+                    : '0.00';
+                const topPerformer = aaScores.length > 0
+                    ? aaScores.reduce((a, b) => a.score > b.score ? a : b).gymnast
+                    : 'N/A';
+
+                return { totalGymnasts, totalMeets, avgScore, topScore, topPerformer };
+            };
+
+            const getInsights = () => {
+                const insights = [];
+                const gymnasts = getUniqueValues('gymnast');
+                
+                gymnasts.forEach(gymnast => {
+                    const gymnastData = data.filter(d => d.gymnast === gymnast && d.event === 'AA')
+                        .sort((a, b) => new Date(a.date) - new Date(b.date));
+                    
+                    if (gymnastData.length >= 2) {
+                        const recent = gymnastData[gymnastData.length - 1].score;
+                        const previous = gymnastData[gymnastData.length - 2].score;
+                        const improvement = recent - previous;
+                        
+                        if (improvement > 0.5) {
+                            insights.push(`${gymnast} improved by ${improvement.toFixed(2)} points in AA (${previous.toFixed(2)} → ${recent.toFixed(2)})`);
+                        }
+                    }
+                });
+
+                // Event-specific insights
+                ['Vault', 'Bars', 'Beam', 'Floor'].forEach(event => {
+                    const eventScores = data.filter(d => d.event === event);
+                    if (eventScores.length > 0) {
+                        const topScore = Math.max(...eventScores.map(d => d.score));
+                        const topGymnast = eventScores.find(d => d.score === topScore);
+                        insights.push(`Highest ${event} score: ${topScore.toFixed(2)} by ${topGymnast.gymnast}`);
+                    }
+                });
+
+                return insights.slice(0, 6);
+            };
+
+            useEffect(() => {
+                if (data.length === 0) return;
+
+                // Destroy existing charts
+                Object.values(chartInstances.current).forEach(chart => {
+                    if (chart) chart.destroy();
+                });
+
+                if (activeTab === 'trends' && chartRefs.trend.current) {
+                    createTrendChart();
+                } else if (activeTab === 'events' && chartRefs.event.current) {
+                    createEventChart();
+                } else if (activeTab === 'comparison' && chartRefs.comparison.current) {
+                    createComparisonChart();
+                }
+            }, [data, activeTab, selectedGymnast, selectedEvent]);
+
+            const createTrendChart = () => {
+                const ctx = chartRefs.trend.current;
+                if (!ctx) return;
+
+                const gymnasts = selectedGymnast === 'all' 
+                    ? getUniqueValues('gymnast') 
+                    : [selectedGymnast];
+
+                const datasets = gymnasts.map((gymnast, index) => {
+                    const gymnastData = data
+                        .filter(d => d.gymnast === gymnast && d.event === selectedEvent)
+                        .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                    const colors = [
+                        'rgb(102, 126, 234)',
+                        'rgb(118, 75, 162)',
+                        'rgb(72, 187, 120)',
+                        'rgb(237, 137, 54)',
+                        'rgb(245, 101, 101)',
+                        'rgb(66, 153, 225)',
+                        'rgb(236, 72, 153)',
+                        'rgb(139, 92, 246)',
+                        'rgb(34, 197, 94)',
+                        'rgb(251, 146, 60)',
+                        'rgb(14, 165, 233)',
+                        'rgb(168, 85, 247)',
+                        'rgb(34, 211, 238)'
+                    ];
+
+                    return {
+                        label: gymnast,
+                        data: gymnastData.map(d => ({ x: d.meet, y: d.score })),
+                        borderColor: colors[index % colors.length],
+                        backgroundColor: colors[index % colors.length] + '20',
+                        tension: 0.3,
+                        fill: false,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    };
+                });
+
+                chartInstances.current.trend = new Chart(ctx, {
+                    type: 'line',
+                    data: { datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 2,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            },
+                            title: {
+                                display: true,
+                                text: `${selectedEvent} Score Trends`,
+                                font: { size: 16, weight: 'bold' }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                type: 'category',
+                                title: {
+                                    display: true,
+                                    text: 'Meet'
+                                }
+                            },
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: 'Score'
+                                }
+                            }
+                        }
+                    }
+                });
+            };
+
+            const createEventChart = () => {
+                const ctx = chartRefs.event.current;
+                if (!ctx) return;
+
+                const gymnast = selectedGymnast === 'all' ? getUniqueValues('gymnast')[0] : selectedGymnast;
+                const events = ['Vault', 'Bars', 'Beam', 'Floor'];
+                const meets = getUniqueValues('meet');
+
+                const datasets = meets.map((meet, index) => {
+                    const meetData = events.map(event => {
+                        const score = data.find(d => 
+                            d.gymnast === gymnast && 
+                            d.event === event && 
+                            d.meet === meet
+                        );
+                        return score ? score.score : 0;
+                    });
+
+                    const colors = [
+                        'rgba(102, 126, 234, 0.8)',
+                        'rgba(118, 75, 162, 0.8)',
+                        'rgba(72, 187, 120, 0.8)'
+                    ];
+
+                    return {
+                        label: meet,
+                        data: meetData,
+                        backgroundColor: colors[index % colors.length]
+                    };
+                });
+
+                chartInstances.current.event = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: events,
+                        datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 2,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            },
+                            title: {
+                                display: true,
+                                text: `${gymnast} - Event Scores by Meet`,
+                                font: { size: 16, weight: 'bold' }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                min: 7,
+                                max: 10,
+                                title: {
+                                    display: true,
+                                    text: 'Score'
+                                }
+                            }
+                        }
+                    }
+                });
+            };
+
+            const createComparisonChart = () => {
+                const ctx = chartRefs.comparison.current;
+                if (!ctx) return;
+
+                const gymnasts = getUniqueValues('gymnast');
+                const latestMeet = getUniqueValues('meet').sort((a, b) => {
+                    const dateA = data.find(d => d.meet === a).date;
+                    const dateB = data.find(d => d.meet === b).date;
+                    return new Date(dateB) - new Date(dateA);
+                })[0];
+
+                const chartData = gymnasts.map(gymnast => {
+                    const score = data.find(d => 
+                        d.gymnast === gymnast && 
+                        d.event === 'AA' && 
+                        d.meet === latestMeet
+                    );
+                    return score ? score.score : 0;
+                }).sort((a, b) => b - a);
+
+                const sortedGymnasts = gymnasts.sort((a, b) => {
+                    const scoreA = data.find(d => d.gymnast === a && d.event === 'AA' && d.meet === latestMeet);
+                    const scoreB = data.find(d => d.gymnast === b && d.event === 'AA' && d.meet === latestMeet);
+                    return (scoreB ? scoreB.score : 0) - (scoreA ? scoreA.score : 0);
+                });
+
+                chartInstances.current.comparison = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: sortedGymnasts,
+                        datasets: [{
+                            label: 'All-Around Score',
+                            data: chartData,
+                            backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                            borderColor: 'rgb(102, 126, 234)',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 1.5,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            title: {
+                                display: true,
+                                text: `Team Comparison - ${latestMeet}`,
+                                font: { size: 16, weight: 'bold' }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: false,
+                                min: 30,
+                                max: 40,
+                                title: {
+                                    display: true,
+                                    text: 'Score'
+                                }
+                            }
+                        }
+                    }
+                });
+            };
+
+            const getScoreClass = (score) => {
+                if (score >= 9) return 'score-high';
+                if (score >= 8.5) return 'score-medium';
+                return 'score-low';
+            };
+
+            const renderOverview = () => {
+                const stats = getStats();
+                const insights = getInsights();
+
+                return (
+                    <div>
+                        <div className="stats-grid">
+                            <div className="stat-card">
+                                <h3>Total Gymnasts</h3>
+                                <div className="value">{stats.totalGymnasts}</div>
+                                <div className="label">Athletes Competing</div>
+                            </div>
+                            <div className="stat-card">
+                                <h3>Total Meets</h3>
+                                <div className="value">{stats.totalMeets}</div>
+                                <div className="label">Competitions This Season</div>
+                            </div>
+                            <div className="stat-card">
+                                <h3>Average AA Score</h3>
+                                <div className="value">{stats.avgScore}</div>
+                                <div className="label">All-Around Average</div>
+                            </div>
+                            <div className="stat-card">
+                                <h3>Top Score</h3>
+                                <div className="value">{stats.topScore}</div>
+                                <div className="label">{stats.topPerformer}</div>
+                            </div>
+                        </div>
+
+                        <div className="insight-box">
+                            <h3>📊 Season Insights</h3>
+                            <ul>
+                                {insights.map((insight, index) => (
+                                    <li key={index}>{insight}</li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div className="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Gymnast</th>
+                                        <th>Latest Meet</th>
+                                        <th>Vault</th>
+                                        <th>Bars</th>
+                                        <th>Beam</th>
+                                        <th>Floor</th>
+                                        <th>All-Around</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {getUniqueValues('gymnast').map(gymnast => {
+                                        const latestMeet = getUniqueValues('meet')[0];
+                                        const scores = data.filter(d => 
+                                            d.gymnast === gymnast && 
+                                            d.meet === latestMeet
+                                        );
+                                        
+                                        const vault = scores.find(s => s.event === 'Vault');
+                                        const bars = scores.find(s => s.event === 'Bars');
+                                        const beam = scores.find(s => s.event === 'Beam');
+                                        const floor = scores.find(s => s.event === 'Floor');
+                                        const aa = scores.find(s => s.event === 'AA');
+
+                                        return (
+                                            <tr key={gymnast}>
+                                                <td><strong>{gymnast}</strong></td>
+                                                <td>{latestMeet}</td>
+                                                <td className={vault ? getScoreClass(vault.score) : ''}>
+                                                    {vault ? vault.score.toFixed(2) : 'N/A'}
+                                                </td>
+                                                <td className={bars ? getScoreClass(bars.score) : ''}>
+                                                    {bars ? bars.score.toFixed(2) : 'N/A'}
+                                                </td>
+                                                <td className={beam ? getScoreClass(beam.score) : ''}>
+                                                    {beam ? beam.score.toFixed(2) : 'N/A'}
+                                                </td>
+                                                <td className={floor ? getScoreClass(floor.score) : ''}>
+                                                    {floor ? floor.score.toFixed(2) : 'N/A'}
+                                                </td>
+                                                <td className={aa ? getScoreClass(aa.score) : ''}>
+                                                    <strong>{aa ? aa.score.toFixed(2) : 'N/A'}</strong>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderTrends = () => {
+                return (
+                    <div>
+                        <div className="controls">
+                            <div className="control-group">
+                                <label>Select Gymnast</label>
+                                <select 
+                                    value={selectedGymnast} 
+                                    onChange={(e) => setSelectedGymnast(e.target.value)}
+                                >
+                                    <option value="all">All Gymnasts</option>
+                                    {getUniqueValues('gymnast').map(g => (
+                                        <option key={g} value={g}>{g}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="control-group">
+                                <label>Select Event</label>
+                                <select 
+                                    value={selectedEvent} 
+                                    onChange={(e) => setSelectedEvent(e.target.value)}
+                                >
+                                    <option value="AA">All-Around</option>
+                                    <option value="Vault">Vault</option>
+                                    <option value="Bars">Bars</option>
+                                    <option value="Beam">Beam</option>
+                                    <option value="Floor">Floor</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div className="chart-container">
+                            <canvas ref={chartRefs.trend}></canvas>
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderEvents = () => {
+                return (
+                    <div>
+                        <div className="controls">
+                            <div className="control-group">
+                                <label>Select Gymnast</label>
+                                <select 
+                                    value={selectedGymnast} 
+                                    onChange={(e) => setSelectedGymnast(e.target.value)}
+                                >
+                                    {selectedGymnast === 'all' && <option value="all">Select a gymnast</option>}
+                                    {getUniqueValues('gymnast').map(g => (
+                                        <option key={g} value={g}>{g}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        <div className="chart-container">
+                            <canvas ref={chartRefs.event}></canvas>
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderComparison = () => {
+                return (
+                    <div>
+                        <div className="chart-container">
+                            <canvas ref={chartRefs.comparison}></canvas>
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderUpdateData = () => {
+                return (
+                    <div>
+                        <div className="upload-section">
+                            <h3>📤 Update Scores</h3>
+                            <p>Upload a new CSV file with the same format to update the dashboard with new meet results.</p>
+                            <input 
+                                type="file" 
+                                accept=".csv" 
+                                onChange={handleFileUpload}
+                                style={{ display: 'none' }}
+                                id="file-upload"
+                            />
+                            <label htmlFor="file-upload">
+                                <button className="btn" onClick={() => document.getElementById('file-upload').click()}>
+                                    Choose CSV File
+                                </button>
+                            </label>
+                        </div>
+
+                        <div className="insight-box">
+                            <h3>📋 CSV Format Requirements</h3>
+                            <ul>
+                                <li>Column headers: Meet Name, Date, Gymnast, Event (Vault/Bars/Beam/Floor/AA), Score</li>
+                                <li>Date format: YYYY-MM-DD</li>
+                                <li>Include one row per event per gymnast per meet</li>
+                                <li>AA (All-Around) row should contain the total score</li>
+                            </ul>
+                        </div>
+
+                        <div className="chart-container">
+                            <h2>Current Data Summary</h2>
+                            <p><strong>Total Records:</strong> {data.length}</p>
+                            <p><strong>Gymnasts:</strong> {getUniqueValues('gymnast').join(', ')}</p>
+                            <p><strong>Meets:</strong> {getUniqueValues('meet').join(', ')}</p>
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="container">
+                    <div className="header">
+                        <h1>🤸‍♀️ Gymnastics Team Dashboard</h1>
+                        <p>Track performance, analyze trends, and celebrate progress</p>
+                    </div>
+
+                    <div className="nav-tabs">
+                        <button 
+                            className={`nav-tab ${activeTab === 'overview' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('overview')}
+                        >
+                            Overview
+                        </button>
+                        <button 
+                            className={`nav-tab ${activeTab === 'trends' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('trends')}
+                        >
+                            Trends
+                        </button>
+                        <button 
+                            className={`nav-tab ${activeTab === 'events' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('events')}
+                        >
+                            Event Analysis
+                        </button>
+                        <button 
+                            className={`nav-tab ${activeTab === 'comparison' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('comparison')}
+                        >
+                            Team Comparison
+                        </button>
+                        <button 
+                            className={`nav-tab ${activeTab === 'update' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('update')}
+                        >
+                            Update Data
+                        </button>
+                    </div>
+
+                    <div className="content">
+                        {activeTab === 'overview' && renderOverview()}
+                        {activeTab === 'trends' && renderTrends()}
+                        {activeTab === 'events' && renderEvents()}
+                        {activeTab === 'comparison' && renderComparison()}
+                        {activeTab === 'update' && renderUpdateData()}
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<GymnasticsDashboard />, document.getElementById('root'));
+    </script>
+</body>
+</html>
