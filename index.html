@@ -624,8 +624,7 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
             const [selectedEvent, setSelectedEvent] = useState('AA');
             const chartRefs = {
                 trend: useRef(null),
-                event: useRef(null),
-                comparison: useRef(null)
+                event: useRef(null)
             };
             const chartInstances = useRef({});
 
@@ -715,8 +714,6 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                     createTrendChart();
                 } else if (activeTab === 'events' && chartRefs.event.current) {
                     createEventChart();
-                } else if (activeTab === 'comparison' && chartRefs.comparison.current) {
-                    createComparisonChart();
                 }
             }, [data, activeTab, selectedGymnast, selectedEvent]);
 
@@ -876,74 +873,6 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                                 beginAtZero: false,
                                 min: 7,
                                 max: 10,
-                                title: {
-                                    display: true,
-                                    text: 'Score'
-                                }
-                            }
-                        }
-                    }
-                });
-            };
-
-            const createComparisonChart = () => {
-                const ctx = chartRefs.comparison.current;
-                if (!ctx) return;
-
-                const gymnasts = getUniqueValues('gymnast');
-                const latestMeet = getUniqueValues('meet').sort((a, b) => {
-                    const dateA = data.find(d => d.meet === a).date;
-                    const dateB = data.find(d => d.meet === b).date;
-                    return new Date(dateB) - new Date(dateA);
-                })[0];
-
-                const chartData = gymnasts.map(gymnast => {
-                    const score = data.find(d => 
-                        d.gymnast === gymnast && 
-                        d.event === 'AA' && 
-                        d.meet === latestMeet
-                    );
-                    return score ? score.score : 0;
-                }).sort((a, b) => b - a);
-
-                const sortedGymnasts = gymnasts.sort((a, b) => {
-                    const scoreA = data.find(d => d.gymnast === a && d.event === 'AA' && d.meet === latestMeet);
-                    const scoreB = data.find(d => d.gymnast === b && d.event === 'AA' && d.meet === latestMeet);
-                    return (scoreB ? scoreB.score : 0) - (scoreA ? scoreA.score : 0);
-                });
-
-                chartInstances.current.comparison = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: sortedGymnasts,
-                        datasets: [{
-                            label: 'All-Around Score',
-                            data: chartData,
-                            backgroundColor: 'rgba(102, 126, 234, 0.8)',
-                            borderColor: 'rgb(102, 126, 234)',
-                            borderWidth: 2
-                        }]
-                    },
-                    options: {
-                        indexAxis: 'y',
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        aspectRatio: window.innerWidth < 768 ? 0.8 : 1.5,
-                        plugins: {
-                            legend: {
-                                display: false
-                            },
-                            title: {
-                                display: true,
-                                text: `Team Comparison - ${latestMeet}`,
-                                font: { size: 16, weight: 'bold' }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                beginAtZero: false,
-                                min: 30,
-                                max: 40,
                                 title: {
                                     display: true,
                                     text: 'Score'
@@ -1117,16 +1046,6 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                 );
             };
 
-            const renderComparison = () => {
-                return (
-                    <div>
-                        <div className="chart-container">
-                            <canvas ref={chartRefs.comparison}></canvas>
-                        </div>
-                    </div>
-                );
-            };
-
             const renderDataSummary = () => {
                 const gymnasts = getUniqueValues('gymnast');
                 const meets = getUniqueValues('meet').sort((a, b) => {
@@ -1265,12 +1184,6 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                             Event Analysis
                         </button>
                         <button 
-                            className={`nav-tab ${activeTab === 'comparison' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('comparison')}
-                        >
-                            Team Comparison
-                        </button>
-                        <button 
                             className={`nav-tab ${activeTab === 'summary' ? 'active' : ''}`}
                             onClick={() => setActiveTab('summary')}
                         >
@@ -1282,7 +1195,6 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                         {activeTab === 'overview' && renderOverview()}
                         {activeTab === 'trends' && renderTrends()}
                         {activeTab === 'events' && renderEvents()}
-                        {activeTab === 'comparison' && renderComparison()}
                         {activeTab === 'summary' && renderDataSummary()}
                     </div>
                 </div>
