@@ -622,6 +622,7 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
             const [activeTab, setActiveTab] = useState('overview');
             const [selectedGymnast, setSelectedGymnast] = useState('all');
             const [selectedEvent, setSelectedEvent] = useState('AA');
+            const [viewMode, setViewMode] = useState('single-event'); // 'single-event' or 'all-events'
             const chartRefs = {
                 trend: useRef(null),
                 event: useRef(null)
@@ -715,48 +716,85 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                 } else if (activeTab === 'events' && chartRefs.event.current) {
                     createEventChart();
                 }
-            }, [data, activeTab, selectedGymnast, selectedEvent]);
+            }, [data, activeTab, selectedGymnast, selectedEvent, viewMode]);
 
             const createTrendChart = () => {
                 const ctx = chartRefs.trend.current;
                 if (!ctx) return;
 
-                const gymnasts = selectedGymnast === 'all' 
-                    ? getUniqueValues('gymnast') 
-                    : [selectedGymnast];
+                let datasets = [];
 
-                const datasets = gymnasts.map((gymnast, index) => {
-                    const gymnastData = data
-                        .filter(d => d.gymnast === gymnast && d.event === selectedEvent)
-                        .sort((a, b) => new Date(a.date) - new Date(b.date));
-
-                    const colors = [
-                        'rgb(102, 126, 234)',
-                        'rgb(118, 75, 162)',
-                        'rgb(72, 187, 120)',
-                        'rgb(237, 137, 54)',
-                        'rgb(245, 101, 101)',
-                        'rgb(66, 153, 225)',
-                        'rgb(236, 72, 153)',
-                        'rgb(139, 92, 246)',
-                        'rgb(34, 197, 94)',
-                        'rgb(251, 146, 60)',
-                        'rgb(14, 165, 233)',
-                        'rgb(168, 85, 247)',
-                        'rgb(34, 211, 238)'
-                    ];
-
-                    return {
-                        label: gymnast,
-                        data: gymnastData.map(d => ({ x: d.meet, y: d.score })),
-                        borderColor: colors[index % colors.length],
-                        backgroundColor: colors[index % colors.length] + '20',
-                        tension: 0.3,
-                        fill: false,
-                        pointRadius: 5,
-                        pointHoverRadius: 7
+                if (viewMode === 'all-events') {
+                    // Show all events for a single gymnast
+                    const gymnast = selectedGymnast === 'all' ? getUniqueValues('gymnast')[0] : selectedGymnast;
+                    const events = ['Vault', 'Bars', 'Beam', 'Floor', 'AA'];
+                    const eventColors = {
+                        'Vault': 'rgb(102, 126, 234)',
+                        'Bars': 'rgb(118, 75, 162)',
+                        'Beam': 'rgb(72, 187, 120)',
+                        'Floor': 'rgb(237, 137, 54)',
+                        'AA': 'rgb(245, 101, 101)'
                     };
-                });
+
+                    datasets = events.map(event => {
+                        const eventData = data
+                            .filter(d => d.gymnast === gymnast && d.event === event)
+                            .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                        return {
+                            label: event,
+                            data: eventData.map(d => ({ x: d.meet, y: d.score })),
+                            borderColor: eventColors[event],
+                            backgroundColor: eventColors[event] + '20',
+                            tension: 0.3,
+                            fill: false,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        };
+                    });
+                } else {
+                    // Original single event view
+                    const gymnasts = selectedGymnast === 'all' 
+                        ? getUniqueValues('gymnast') 
+                        : [selectedGymnast];
+
+                    datasets = gymnasts.map((gymnast, index) => {
+                        const gymnastData = data
+                            .filter(d => d.gymnast === gymnast && d.event === selectedEvent)
+                            .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                        const colors = [
+                            'rgb(102, 126, 234)',
+                            'rgb(118, 75, 162)',
+                            'rgb(72, 187, 120)',
+                            'rgb(237, 137, 54)',
+                            'rgb(245, 101, 101)',
+                            'rgb(66, 153, 225)',
+                            'rgb(236, 72, 153)',
+                            'rgb(139, 92, 246)',
+                            'rgb(34, 197, 94)',
+                            'rgb(251, 146, 60)',
+                            'rgb(14, 165, 233)',
+                            'rgb(168, 85, 247)',
+                            'rgb(34, 211, 238)'
+                        ];
+
+                        return {
+                            label: gymnast,
+                            data: gymnastData.map(d => ({ x: d.meet, y: d.score })),
+                            borderColor: colors[index % colors.length],
+                            backgroundColor: colors[index % colors.length] + '20',
+                            tension: 0.3,
+                            fill: false,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        };
+                    });
+                }
+
+                const chartTitle = viewMode === 'all-events' 
+                    ? `All Events - ${selectedGymnast === 'all' ? getUniqueValues('gymnast')[0] : selectedGymnast}`
+                    : `${selectedEvent} Score Trends`;
 
                 chartInstances.current.trend = new Chart(ctx, {
                     type: 'line',
@@ -779,7 +817,7 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                             },
                             title: {
                                 display: true,
-                                text: `${selectedEvent} Score Trends`,
+                                text: chartTitle,
                                 font: { size: window.innerWidth < 768 ? 14 : 16, weight: 'bold' },
                                 padding: {
                                     bottom: window.innerWidth < 768 ? 10 : 20
@@ -927,7 +965,80 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                             </ul>
                         </div>
 
-                        <div className="table-container">
+                        <div className="chart-container">
+                            <h2>🏆 Season Records</h2>
+                            
+                            <h3 style={{ color: '#667eea', marginTop: '20px', marginBottom: '15px', fontSize: '1.2em' }}>Team Records</h3>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Event</th>
+                                        <th>Best Score</th>
+                                        <th>Gymnast</th>
+                                        <th>Meet</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {['Vault', 'Bars', 'Beam', 'Floor', 'AA'].map(event => {
+                                        const eventScores = data.filter(d => d.event === event);
+                                        if (eventScores.length === 0) return null;
+                                        
+                                        const bestScore = Math.max(...eventScores.map(d => d.score));
+                                        const record = eventScores.find(d => d.score === bestScore);
+                                        
+                                        return (
+                                            <tr key={event}>
+                                                <td><strong>{event === 'AA' ? 'All-Around' : event}</strong></td>
+                                                <td className={getScoreClass(bestScore)}>{bestScore.toFixed(2)}</td>
+                                                <td>{record.gymnast}</td>
+                                                <td>{record.meet}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+
+                            <h3 style={{ color: '#667eea', marginTop: '30px', marginBottom: '15px', fontSize: '1.2em' }}>Individual Personal Records</h3>
+                            <div className="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Gymnast</th>
+                                        <th>Vault</th>
+                                        <th>Bars</th>
+                                        <th>Beam</th>
+                                        <th>Floor</th>
+                                        <th>All-Around</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {getUniqueValues('gymnast').map(gymnast => {
+                                        const gymnastData = data.filter(d => d.gymnast === gymnast);
+                                        
+                                        const vaultBest = Math.max(...gymnastData.filter(d => d.event === 'Vault').map(d => d.score));
+                                        const barsBest = Math.max(...gymnastData.filter(d => d.event === 'Bars').map(d => d.score));
+                                        const beamBest = Math.max(...gymnastData.filter(d => d.event === 'Beam').map(d => d.score));
+                                        const floorBest = Math.max(...gymnastData.filter(d => d.event === 'Floor').map(d => d.score));
+                                        const aaBest = Math.max(...gymnastData.filter(d => d.event === 'AA').map(d => d.score));
+                                        
+                                        return (
+                                            <tr key={gymnast}>
+                                                <td><strong>{gymnast}</strong></td>
+                                                <td className={getScoreClass(vaultBest)}>{vaultBest > 0 ? vaultBest.toFixed(2) : 'N/A'}</td>
+                                                <td className={getScoreClass(barsBest)}>{barsBest > 0 ? barsBest.toFixed(2) : 'N/A'}</td>
+                                                <td className={getScoreClass(beamBest)}>{beamBest > 0 ? beamBest.toFixed(2) : 'N/A'}</td>
+                                                <td className={getScoreClass(floorBest)}>{floorBest > 0 ? floorBest.toFixed(2) : 'N/A'}</td>
+                                                <td className={getScoreClass(aaBest)}><strong>{aaBest > 0 ? aaBest.toFixed(2) : 'N/A'}</strong></td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                            </div>
+                        </div>
+
+                        <div className="chart-container">
+                            <h2>📋 Latest Meet Scores</h2>
                             <div className="table-wrapper">
                             <table>
                                 <thead>
@@ -990,30 +1101,47 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                     <div>
                         <div className="controls">
                             <div className="control-group">
+                                <label>View Mode</label>
+                                <select 
+                                    value={viewMode} 
+                                    onChange={(e) => {
+                                        setViewMode(e.target.value);
+                                        if (e.target.value === 'all-events' && selectedGymnast === 'all') {
+                                            setSelectedGymnast(getUniqueValues('gymnast')[0]);
+                                        }
+                                    }}
+                                >
+                                    <option value="single-event">Single Event</option>
+                                    <option value="all-events">All Events (One Gymnast)</option>
+                                </select>
+                            </div>
+                            <div className="control-group">
                                 <label>Select Gymnast</label>
                                 <select 
                                     value={selectedGymnast} 
                                     onChange={(e) => setSelectedGymnast(e.target.value)}
                                 >
-                                    <option value="all">All Gymnasts</option>
+                                    {viewMode === 'single-event' && <option value="all">All Gymnasts</option>}
                                     {getUniqueValues('gymnast').map(g => (
                                         <option key={g} value={g}>{g}</option>
                                     ))}
                                 </select>
                             </div>
-                            <div className="control-group">
-                                <label>Select Event</label>
-                                <select 
-                                    value={selectedEvent} 
-                                    onChange={(e) => setSelectedEvent(e.target.value)}
-                                >
-                                    <option value="AA">All-Around</option>
-                                    <option value="Vault">Vault</option>
-                                    <option value="Bars">Bars</option>
-                                    <option value="Beam">Beam</option>
-                                    <option value="Floor">Floor</option>
-                                </select>
-                            </div>
+                            {viewMode === 'single-event' && (
+                                <div className="control-group">
+                                    <label>Select Event</label>
+                                    <select 
+                                        value={selectedEvent} 
+                                        onChange={(e) => setSelectedEvent(e.target.value)}
+                                    >
+                                        <option value="AA">All-Around</option>
+                                        <option value="Vault">Vault</option>
+                                        <option value="Bars">Bars</option>
+                                        <option value="Beam">Beam</option>
+                                        <option value="Floor">Floor</option>
+                                    </select>
+                                </div>
+                            )}
                         </div>
                         <div className="chart-container">
                             <canvas ref={chartRefs.trend}></canvas>
@@ -1165,7 +1293,7 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
             return (
                 <div className="container">
                     <div className="header">
-                        <h1>🤸‍♀️ FGC Level 3 Dashboard</h1>
+                        <h1>🤸‍♀️ Gymnastics Team Dashboard</h1>
                         <p>Track performance, analyze trends, and celebrate progress</p>
                     </div>
 
