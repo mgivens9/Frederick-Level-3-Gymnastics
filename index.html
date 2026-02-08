@@ -725,15 +725,14 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                 let datasets = [];
 
                 if (viewMode === 'all-events') {
-                    // Show all events for a single gymnast
+                    // Show all events for a single gymnast (excluding AA)
                     const gymnast = selectedGymnast === 'all' ? getUniqueValues('gymnast')[0] : selectedGymnast;
-                    const events = ['Vault', 'Bars', 'Beam', 'Floor', 'AA'];
+                    const events = ['Vault', 'Bars', 'Beam', 'Floor'];
                     const eventColors = {
                         'Vault': 'rgb(102, 126, 234)',
                         'Bars': 'rgb(118, 75, 162)',
                         'Beam': 'rgb(72, 187, 120)',
-                        'Floor': 'rgb(237, 137, 54)',
-                        'AA': 'rgb(245, 101, 101)'
+                        'Floor': 'rgb(237, 137, 54)'
                     };
 
                     datasets = events.map(event => {
