@@ -650,17 +650,6 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                 });
             };
 
-            const handleFileUpload = (event) => {
-                const file = event.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        parseCSV(e.target.result);
-                    };
-                    reader.readAsText(file);
-                }
-            };
-
             const getUniqueValues = (field) => {
                 return [...new Set(data.map(d => d[field]))].sort();
             };
@@ -778,31 +767,51 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                     options: {
                         responsive: true,
                         maintainAspectRatio: true,
-                        aspectRatio: window.innerWidth < 768 ? 1.2 : 2,
+                        aspectRatio: window.innerWidth < 768 ? 1 : 2,
                         plugins: {
                             legend: {
                                 display: true,
-                                position: 'top'
+                                position: window.innerWidth < 768 ? 'bottom' : 'top',
+                                labels: {
+                                    boxWidth: window.innerWidth < 768 ? 12 : 40,
+                                    padding: window.innerWidth < 768 ? 8 : 10,
+                                    font: {
+                                        size: window.innerWidth < 768 ? 10 : 12
+                                    }
+                                }
                             },
                             title: {
                                 display: true,
                                 text: `${selectedEvent} Score Trends`,
-                                font: { size: 16, weight: 'bold' }
+                                font: { size: window.innerWidth < 768 ? 14 : 16, weight: 'bold' },
+                                padding: {
+                                    bottom: window.innerWidth < 768 ? 10 : 20
+                                }
                             }
                         },
                         scales: {
                             x: {
                                 type: 'category',
                                 title: {
-                                    display: true,
+                                    display: window.innerWidth >= 768,
                                     text: 'Meet'
+                                },
+                                ticks: {
+                                    font: {
+                                        size: window.innerWidth < 768 ? 9 : 11
+                                    }
                                 }
                             },
                             y: {
                                 beginAtZero: false,
                                 title: {
-                                    display: true,
+                                    display: window.innerWidth >= 768,
                                     text: 'Score'
+                                },
+                                ticks: {
+                                    font: {
+                                        size: window.innerWidth < 768 ? 9 : 11
+                                    }
                                 }
                             }
                         }
@@ -1118,41 +1127,112 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                 );
             };
 
-            const renderUpdateData = () => {
+            const renderDataSummary = () => {
+                const gymnasts = getUniqueValues('gymnast');
+                const meets = getUniqueValues('meet').sort((a, b) => {
+                    const dateA = new Date(data.find(d => d.meet === a).date);
+                    const dateB = new Date(data.find(d => d.meet === b).date);
+                    return dateB - dateA;
+                });
+
                 return (
                     <div>
-                        <div className="upload-section">
-                            <h3>📤 Update Scores</h3>
-                            <p>Upload a new CSV file with the same format to update the dashboard with new meet results.</p>
-                            <input 
-                                type="file" 
-                                accept=".csv" 
-                                onChange={handleFileUpload}
-                                style={{ display: 'none' }}
-                                id="file-upload"
-                            />
-                            <label htmlFor="file-upload">
-                                <button className="btn" onClick={() => document.getElementById('file-upload').click()}>
-                                    Choose CSV File
-                                </button>
-                            </label>
-                        </div>
-
-                        <div className="insight-box">
-                            <h3>📋 CSV Format Requirements</h3>
-                            <ul>
-                                <li>Column headers: Meet Name, Date, Gymnast, Event (Vault/Bars/Beam/Floor/AA), Score</li>
-                                <li>Date format: YYYY-MM-DD</li>
-                                <li>Include one row per event per gymnast per meet</li>
-                                <li>AA (All-Around) row should contain the total score</li>
-                            </ul>
+                        <div className="chart-container">
+                            <h2>📊 Season Statistics</h2>
+                            <p><strong>Total Gymnasts:</strong> {gymnasts.length}</p>
+                            <p><strong>Total Meets:</strong> {meets.length}</p>
+                            <p><strong>Total Scores Recorded:</strong> {data.length}</p>
                         </div>
 
                         <div className="chart-container">
-                            <h2>Current Data Summary</h2>
-                            <p><strong>Total Records:</strong> {data.length}</p>
-                            <p><strong>Gymnasts:</strong> {getUniqueValues('gymnast').join(', ')}</p>
-                            <p><strong>Meets:</strong> {getUniqueValues('meet').join(', ')}</p>
+                            <h2>👥 Team Roster</h2>
+                            <p>{gymnasts.join(', ')}</p>
+                        </div>
+
+                        <div className="chart-container">
+                            <h2>🏆 Meet Schedule</h2>
+                            {meets.map(meet => {
+                                const meetDate = data.find(d => d.meet === meet).date;
+                                const formattedDate = new Date(meetDate).toLocaleDateString('en-US', { 
+                                    year: 'numeric', 
+                                    month: 'long', 
+                                    day: 'numeric' 
+                                });
+                                return (
+                                    <p key={meet}><strong>{meet}</strong> - {formattedDate}</p>
+                                );
+                            })}
+                        </div>
+
+                        <div className="chart-container">
+                            <h2>📈 All-Around Score Range by Gymnast</h2>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Gymnast</th>
+                                        <th>Low Score</th>
+                                        <th>High Score</th>
+                                        <th>Average</th>
+                                        <th>Meets</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {gymnasts.map(gymnast => {
+                                        const aaScores = data
+                                            .filter(d => d.gymnast === gymnast && d.event === 'AA')
+                                            .map(d => d.score);
+                                        
+                                        if (aaScores.length === 0) return null;
+
+                                        const low = Math.min(...aaScores);
+                                        const high = Math.max(...aaScores);
+                                        const avg = aaScores.reduce((a, b) => a + b, 0) / aaScores.length;
+
+                                        return (
+                                            <tr key={gymnast}>
+                                                <td><strong>{gymnast}</strong></td>
+                                                <td className={getScoreClass(low)}>{low.toFixed(2)}</td>
+                                                <td className={getScoreClass(high)}>{high.toFixed(2)}</td>
+                                                <td className={getScoreClass(avg)}>{avg.toFixed(2)}</td>
+                                                <td>{aaScores.length}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="chart-container">
+                            <h2>🎯 Event Averages (Team-Wide)</h2>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Event</th>
+                                        <th>Team Average</th>
+                                        <th>Highest Score</th>
+                                        <th>Top Performer</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {['Vault', 'Bars', 'Beam', 'Floor'].map(event => {
+                                        const eventScores = data.filter(d => d.event === event);
+                                        if (eventScores.length === 0) return null;
+
+                                        const avg = eventScores.reduce((sum, d) => sum + d.score, 0) / eventScores.length;
+                                        const highest = Math.max(...eventScores.map(d => d.score));
+                                        const topPerformer = eventScores.find(d => d.score === highest);
+
+                                        return (
+                                            <tr key={event}>
+                                                <td><strong>{event}</strong></td>
+                                                <td className={getScoreClass(avg)}>{avg.toFixed(2)}</td>
+                                                <td className={getScoreClass(highest)}>{highest.toFixed(2)}</td>
+                                                <td>{topPerformer.gymnast}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 );
@@ -1191,10 +1271,10 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                             Team Comparison
                         </button>
                         <button 
-                            className={`nav-tab ${activeTab === 'update' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('update')}
+                            className={`nav-tab ${activeTab === 'summary' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('summary')}
                         >
-                            Update Data
+                            Data Summary
                         </button>
                     </div>
 
@@ -1203,7 +1283,7 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                         {activeTab === 'trends' && renderTrends()}
                         {activeTab === 'events' && renderEvents()}
                         {activeTab === 'comparison' && renderComparison()}
-                        {activeTab === 'update' && renderUpdateData()}
+                        {activeTab === 'summary' && renderDataSummary()}
                     </div>
                 </div>
             );
