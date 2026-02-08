@@ -172,6 +172,12 @@
             background: white;
             border-radius: 15px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .table-wrapper {
+            min-width: 100%;
+            overflow-x: auto;
         }
         
         table {
@@ -291,17 +297,123 @@
             margin-right: 8px;
         }
         
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0 -15px;
+            padding: 0 15px;
+        }
+        
         @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 20px 15px;
+            }
+            
             .header h1 {
-                font-size: 1.8em;
+                font-size: 1.5em;
+            }
+            
+            .header p {
+                font-size: 0.9em;
             }
             
             .stats-grid {
                 grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .stat-card {
+                padding: 20px;
+            }
+            
+            .stat-card .value {
+                font-size: 2em;
             }
             
             .controls {
                 flex-direction: column;
+                gap: 10px;
+            }
+            
+            .control-group {
+                min-width: 100%;
+            }
+            
+            .content {
+                padding: 15px;
+            }
+            
+            .chart-container {
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .chart-container h2 {
+                font-size: 1.2em;
+            }
+            
+            .nav-tabs {
+                padding: 0 10px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .nav-tab {
+                padding: 12px 15px;
+                font-size: 0.9em;
+            }
+            
+            table {
+                font-size: 0.85em;
+            }
+            
+            th, td {
+                padding: 10px 8px;
+                white-space: nowrap;
+            }
+            
+            .insight-box {
+                padding: 15px;
+                font-size: 0.9em;
+            }
+            
+            .upload-section {
+                padding: 25px 15px;
+            }
+            
+            .upload-section h3 {
+                font-size: 1.1em;
+            }
+            
+            .upload-section p {
+                font-size: 0.9em;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.3em;
+            }
+            
+            .nav-tab {
+                padding: 10px 12px;
+                font-size: 0.85em;
+            }
+            
+            .stat-card .value {
+                font-size: 1.8em;
+            }
+            
+            table {
+                font-size: 0.75em;
+            }
+            
+            th, td {
+                padding: 8px 5px;
             }
         }
     </style>
@@ -666,7 +778,7 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                     options: {
                         responsive: true,
                         maintainAspectRatio: true,
-                        aspectRatio: 2,
+                        aspectRatio: window.innerWidth < 768 ? 1.2 : 2,
                         plugins: {
                             legend: {
                                 display: true,
@@ -738,7 +850,7 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                     options: {
                         responsive: true,
                         maintainAspectRatio: true,
-                        aspectRatio: 2,
+                        aspectRatio: window.innerWidth < 768 ? 1.2 : 2,
                         plugins: {
                             legend: {
                                 display: true,
@@ -807,7 +919,7 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                         indexAxis: 'y',
                         responsive: true,
                         maintainAspectRatio: true,
-                        aspectRatio: 1.5,
+                        aspectRatio: window.innerWidth < 768 ? 0.8 : 1.5,
                         plugins: {
                             legend: {
                                 display: false
@@ -878,6 +990,7 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                         </div>
 
                         <div className="table-container">
+                            <div className="table-wrapper">
                             <table>
                                 <thead>
                                     <tr>
@@ -928,6 +1041,7 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                                     })}
                                 </tbody>
                             </table>
+                            </div>
                         </div>
                     </div>
                 );
