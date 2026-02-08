@@ -1070,6 +1070,7 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
 
                         <div className="chart-container">
                             <h2>🏆 Meet Schedule</h2>
+                            <h3 style={{ color: '#48bb78', marginTop: '20px', marginBottom: '10px', fontSize: '1.1em' }}>✅ Completed Meets</h3>
                             {meets.map(meet => {
                                 const meetDate = data.find(d => d.meet === meet).date;
                                 const formattedDate = new Date(meetDate).toLocaleDateString('en-US', { 
@@ -1081,6 +1082,10 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                                     <p key={meet}><strong>{meet}</strong> - {formattedDate}</p>
                                 );
                             })}
+                            <h3 style={{ color: '#667eea', marginTop: '25px', marginBottom: '10px', fontSize: '1.1em' }}>📅 Upcoming Meets</h3>
+                            <p><strong>Frederick Classic</strong> - February 20-22, 2026</p>
+                            <p><strong>Prep for States</strong> - March 28-29, 2026</p>
+                            <p><strong>Level 3/4/5 States</strong> - April 9-12, 2026</p>
                         </div>
 
                         <div className="chart-container">
@@ -1160,7 +1165,7 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
             return (
                 <div className="container">
                     <div className="header">
-                        <h1>🤸‍♀️ Gymnastics Team Dashboard</h1>
+                        <h1>🤸‍♀️ FGC Level 3 Dashboard</h1>
                         <p>Track performance, analyze trends, and celebrate progress</p>
                     </div>
 
