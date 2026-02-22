@@ -1118,7 +1118,12 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                                 </thead>
                                 <tbody>
                                     {getUniqueValues('gymnast').map(gymnast => {
-                                        const latestMeet = getUniqueValues('meet')[0];
+                                        const meets = getUniqueValues('meet');
+                                        const latestMeet = meets.sort((a, b) => {
+                                            const dateA = new Date(data.find(d => d.meet === a).date);
+                                            const dateB = new Date(data.find(d => d.meet === b).date);
+                                            return dateB - dateA;
+                                        })[0];
                                         const scores = data.filter(d => 
                                             d.gymnast === gymnast && 
                                             d.meet === latestMeet
