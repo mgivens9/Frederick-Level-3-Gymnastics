@@ -1181,6 +1181,100 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
             };
 
             const renderTrends = () => {
+                // Generate insights for single event, all gymnasts view
+                const getEventInsights = () => {
+                    if (viewMode !== 'single-event' || selectedGymnast !== 'all') return null;
+
+                    const insights = [];
+                    const eventScores = data.filter(d => d.event === selectedEvent);
+                    const gymnasts = getUniqueValues('gymnast');
+
+                    // Find best performer
+                    const bestScore = Math.max(...eventScores.map(d => d.score));
+                    const bestPerformer = eventScores.find(d => d.score === bestScore);
+                    insights.push(`Top ${selectedEvent} score: ${bestScore.toFixed(2)} by ${bestPerformer.gymnast} at ${bestPerformer.meet}`);
+
+                    // Find most improved
+                    const improvements = [];
+                    gymnasts.forEach(gymnast => {
+                        const gymnastScores = eventScores
+                            .filter(d => d.gymnast === gymnast)
+                            .sort((a, b) => new Date(a.date) - new Date(b.date));
+                        
+                        if (gymnastScores.length >= 2) {
+                            const first = gymnastScores[0].score;
+                            const last = gymnastScores[gymnastScores.length - 1].score;
+                            const improvement = last - first;
+                            improvements.push({ gymnast, improvement, first, last });
+                        }
+                    });
+
+                    if (improvements.length > 0) {
+                        const mostImproved = improvements.reduce((a, b) => a.improvement > b.improvement ? a : b);
+                        if (mostImproved.improvement > 0) {
+                            insights.push(`Most improved: ${mostImproved.gymnast} (+${mostImproved.improvement.toFixed(2)} points, ${mostImproved.first.toFixed(2)} → ${mostImproved.last.toFixed(2)})`);
+                        }
+                    }
+
+                    // Find most consistent (lowest variance)
+                    const consistencyScores = [];
+                    gymnasts.forEach(gymnast => {
+                        const gymnastScores = eventScores
+                            .filter(d => d.gymnast === gymnast)
+                            .map(d => d.score);
+                        
+                        if (gymnastScores.length >= 2) {
+                            const avg = gymnastScores.reduce((a, b) => a + b, 0) / gymnastScores.length;
+                            const variance = gymnastScores.reduce((sum, score) => sum + Math.pow(score - avg, 2), 0) / gymnastScores.length;
+                            const stdDev = Math.sqrt(variance);
+                            consistencyScores.push({ gymnast, stdDev, avg });
+                        }
+                    });
+
+                    if (consistencyScores.length > 0) {
+                        const mostConsistent = consistencyScores.reduce((a, b) => a.stdDev < b.stdDev ? a : b);
+                        insights.push(`Most consistent: ${mostConsistent.gymnast} (avg ${mostConsistent.avg.toFixed(2)}, variance ±${mostConsistent.stdDev.toFixed(2)})`);
+                    }
+
+                    // Recent trend analysis - who's trending up in last 2 meets
+                    const recentTrends = [];
+                    const meets = getUniqueValues('meet').sort((a, b) => {
+                        const dateA = new Date(data.find(d => d.meet === a).date);
+                        const dateB = new Date(data.find(d => d.meet === b).date);
+                        return dateB - dateA;
+                    });
+
+                    if (meets.length >= 2) {
+                        const lastMeet = meets[0];
+                        const secondLastMeet = meets[1];
+
+                        gymnasts.forEach(gymnast => {
+                            const lastScore = eventScores.find(d => d.gymnast === gymnast && d.meet === lastMeet);
+                            const prevScore = eventScores.find(d => d.gymnast === gymnast && d.meet === secondLastMeet);
+                            
+                            if (lastScore && prevScore) {
+                                const change = lastScore.score - prevScore.score;
+                                if (change > 0.2) {
+                                    recentTrends.push({ gymnast, change });
+                                }
+                            }
+                        });
+
+                        if (recentTrends.length > 0) {
+                            const topTrend = recentTrends.reduce((a, b) => a.change > b.change ? a : b);
+                            insights.push(`Recent momentum: ${topTrend.gymnast} (+${topTrend.change.toFixed(2)} in last meet)`);
+                        }
+                    }
+
+                    // Average team score for this event
+                    const avgTeamScore = eventScores.reduce((sum, d) => sum + d.score, 0) / eventScores.length;
+                    insights.push(`Team average on ${selectedEvent}: ${avgTeamScore.toFixed(2)}`);
+
+                    return insights;
+                };
+
+                const insights = getEventInsights();
+
                 return (
                     <div>
                         <div className="controls">
@@ -1227,6 +1321,18 @@ Christmas on the Chesapeake,2025-12-12,Aiyana Lanham,AA,32.9`;
                                 </div>
                             )}
                         </div>
+
+                        {insights && insights.length > 0 && (
+                            <div className="insight-box">
+                                <h3>📊 {selectedEvent} Analysis</h3>
+                                <ul>
+                                    {insights.map((insight, index) => (
+                                        <li key={index}>{insight}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
                         <div className="chart-container">
                             <canvas ref={chartRefs.trend}></canvas>
                         </div>
